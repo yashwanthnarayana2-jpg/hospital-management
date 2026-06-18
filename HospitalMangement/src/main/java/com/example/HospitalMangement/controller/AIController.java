@@ -1,26 +1,36 @@
- package com.example.HospitalMangement.controller;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+package com.example.HospitalMangement.controller;
 
 import com.example.HospitalMangement.model.AiChat;
+import com.example.HospitalMangement.repository.ChatRepo;
 import com.example.HospitalMangement.service.OpenAIService;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
- @RequestMapping("/ai")
- public class AIController {
+@RequestMapping("/chat")
+public class AIController {
 
-     @Autowired
-     private OpenAIService service;
+    private final OpenAIService mistralService;
+    private final ChatRepo repository;
 
-     @PostMapping("/prescription")
-     public String explain(@RequestBody AiChat request) {
+    public AIController(OpenAIService mistralService, ChatRepo repository) {
+        this.mistralService = mistralService;
+        this.repository = repository;
+    }
 
-         return service.explainPrescription(request.getText());
+    // POST: http://localhost:8082/chat/sent
+    @PostMapping("/sent")
+    public AiChat sendQuery(@RequestBody AiChat request) {
+        String response = mistralService.explainPrescription(request.getText());
+        AiChat chat = new AiChat(request.getText(), response);
+        return repository.save(chat);
+    }
 
-     }
- }
- 
+    // GET: http://localhost:8082/chat/recieve
+    @GetMapping("/recieve")
+    public List<AiChat> getChatHistory() {
+        return repository.findAll();
+    }
+     
+}
